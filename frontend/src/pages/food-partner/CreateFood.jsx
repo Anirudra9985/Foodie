@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import axios from 'axios';
+import { foodAPI } from '../../services/api';
 import '../../styles/create-food.css';
 import { useNavigate } from 'react-router-dom';
 
@@ -47,26 +47,31 @@ const CreateFood = () => {
 
     const openFileDialog = () => fileInputRef.current?.click();
 
+    const [isUploading, setIsUploading] = useState(false);
+    const [uploadError, setUploadError] = useState('');
+
     const onSubmit = async (e) => {
         e.preventDefault();
+        setIsUploading(true);
+        setUploadError('');
 
-        const formData = new FormData();
+        try {
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('description', description);
+            formData.append("video", videoFile);
 
-        formData.append('name', name);
-        formData.append('description', description);
-        formData.append("mama", videoFile);
-
-        const response = await axios.post("http://localhost:3000/api/food", formData, {
-            withCredentials: true,
-        })
-
-        console.log(response.data);
-        navigate("/"); // Redirect to home or another page after successful creation
-        // Optionally reset
-        // setName(''); setDescription(''); setVideoFile(null);
+            await foodAPI.createFood(formData);
+            navigate("/");
+        } catch (err) {
+            console.error("Upload error:", err);
+            setUploadError(err.response?.data?.message || "Failed to upload food reel. Please try again.");
+        } finally {
+            setIsUploading(false);
+        }
     };
 
-    const isDisabled = useMemo(() => !name.trim() || !videoFile, [ name, videoFile ]);
+    const isDisabled = useMemo(() => !name.trim() || !videoFile || isUploading, [ name, videoFile, isUploading ]);
 
     return (
         <div className="create-food-page">
@@ -155,9 +160,15 @@ const CreateFood = () => {
                         />
                     </div>
 
+                    {uploadError && (
+                        <div style={{ color: '#ef4444', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', padding: '0.75rem', borderRadius: '8px', fontSize: '0.88rem', margin: '0.5rem 0' }}>
+                            {uploadError}
+                        </div>
+                    )}
+
                     <div className="form-actions">
                         <button className="btn-primary" type="submit" disabled={isDisabled}>
-                            Save Food
+                            {isUploading ? 'Publishing Reel...' : 'Publish Food Reel'}
                         </button>
                     </div>
                 </form>

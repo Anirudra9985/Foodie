@@ -1,6 +1,6 @@
-// create server
 const express = require('express');
 const cookieParser = require('cookie-parser');
+const path = require('path');
 const authRoutes = require('./routes/auth.routes');
 const foodRoutes = require('./routes/food.routes');
 const foodPartnerRoutes = require('./routes/food-partner.routes');
@@ -8,14 +8,20 @@ const cors = require('cors');
 
 const app = express();
 app.use(cors({
-    origin: "http://localhost:5173",
-    credentials: true
+    origin: true,
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(cookieParser());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Serve static uploads
+app.use('/uploads', express.static(path.join(__dirname, '../public/uploads')));
 
 app.get("/", (req, res) => {
-    res.send("Hello World");
+    res.json({ message: "FoodVibe API is running" });
 })
 
 app.use('/api/auth', authRoutes);
